@@ -153,10 +153,10 @@ def get_acquisition_ome_xml(
 
 
 def filter_hot_pixels(img: np.ndarray, thres: float) -> np.ndarray:
-    kernel = np.ones((1, 3, 3), dtype=bool)
-    kernel[0, 1, 1] = False
+    kernel = np.ones((1, 3, 3), dtype=bool) #creates a new 3D np array with the shape (1,3,3), filled with boolean values initalized to True
+    kernel[0, 1, 1] = False #introduce a single False value in the specified dimension
     max_neighbor_img = maximum_filter(img, footprint=kernel, mode="mirror")
-    return np.where(img - max_neighbor_img > thres, max_neighbor_img, img)
+    return np.where(img - max_neighbor_img > thres, max_neighbor_img, img) #each hot pixel will be replaced with the maximum value in it's 3x3 neighborhood
 
 
 def sort_channels_by_mass(channels: Sequence[str]) -> List[str]:

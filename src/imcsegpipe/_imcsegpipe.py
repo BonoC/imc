@@ -12,31 +12,31 @@ import pandas as pd
 import tifffile
 import xtiff
 from readimc import MCDFile, TXTFile
-from readimc.data import Acquisition, Panorama, Slide
+from readimc.data import Acquisition, Panorama, Slide #readimc.data is a subpackage from within the readimc package
 
 from .utils import AcquisitionMetadata, filter_hot_pixels, get_acquisition_ome_xml
 
 
 def extract_zip_file(
-    zip_file: Union[str, PathLike], dest_dir: Union[str, PathLike]
+    zip_file: Union[str, PathLike], dest_dir: Union[str, PathLike] #union is a hint in python that the input variable can be multiple variable types
 ) -> None:
-    with ZipFile(zip_file, allowZip64=True) as f:
-        f.extractall(dest_dir)
-
+    with ZipFile(zip_file, allowZip64=True) as f: #with statement guarantees that the file is closed after execution
+        f.extractall(dest_dir)                    #ZipFile function from zipfile module is used to create a ZipFile object from the defined path
+                                                  #ZipFile object can be used like a context manager to extract files from within.
 
 def match_txt_files(
-    mcd_files: Sequence[Union[str, PathLike]], txt_files: Sequence[Union[str, PathLike]]
-) -> Dict[Union[str, PathLike], List[Path]]:
+    mcd_files: Sequence[Union[str, PathLike]], txt_files: Sequence[Union[str, PathLike]] #Input list of Path objects from mcd and txt as the defined sequence
+) -> Dict[Union[str, PathLike], List[Path]]: #returns a dictionary where each key is the mcd path and each value is a list of txt paths
     unmatched_txt_files = list(txt_files)
     matched_txt_files: Dict[Union[str, PathLike], List[Path]] = {}
-    for mcd_file in sorted(mcd_files, key=lambda x: Path(x).stem, reverse=True):
+    for mcd_file in sorted(mcd_files, key=lambda x: Path(x).stem, reverse=True): #sorts mcd files in descending order based on their stem file names
         matched_txt_files[mcd_file] = []
         i = 0
-        while i < len(unmatched_txt_files):
+        while i < len(unmatched_txt_files): #while loop which loops through unmatched_txt_files list if the list is not empty
             txt_file = unmatched_txt_files[i]
-            if Path(txt_file).stem.startswith(Path(mcd_file).stem):
-                matched_txt_files[mcd_file].append(Path(txt_file))
-                unmatched_txt_files.remove(txt_file)
+            if Path(txt_file).stem.startswith(Path(mcd_file).stem): #if stem name of mcd file and txt file is the same (ie. Patient1.mcd & Patient1_pos_1_1_1.txt)
+                matched_txt_files[mcd_file].append(Path(txt_file))  #append the txt file path into the value list corresponding to the mcdfile 
+                unmatched_txt_files.remove(txt_file) #remove the txt file Path from the unmatched list
                 i -= 1
             i += 1
     if len(unmatched_txt_files) > 0:
@@ -129,25 +129,25 @@ def create_analysis_stacks(
         acquisition_channels_file = acquisition_img_file.with_name(
             acquisition_img_file.name[:-9] + ".csv"
         )
-        acquisition_img = tifffile.imread(acquisition_img_file)
+        acquisition_img = tifffile.imread(acquisition_img_file) #read ometiff image for each acquisition
         assert acquisition_img.ndim == 3
-        acquisition_channels: pd.DataFrame = pd.read_csv(acquisition_channels_file)
+        acquisition_channels: pd.DataFrame = pd.read_csv(acquisition_channels_file) #read acquisition channel csv file
         assert len(acquisition_channels.index) == acquisition_img.shape[0]
         analysis_channel_indices = [
-            acquisition_channels["channel_name"].tolist().index(channel_name)
-            for channel_name in analysis_channels
+            acquisition_channels["channel_name"].tolist().index(channel_name)  #generate a list of string elements from channel_names column of csv file
+            for channel_name in analysis_channels #find the list index that matches the channel name in analysis channel with the acquisition channels
         ]
-        analysis_img = acquisition_img[analysis_channel_indices]
+        analysis_img = acquisition_img[analysis_channel_indices] #subset the channel images from the ometiff
         analysis_img_file = Path(analysis_dir) / (
-            acquisition_img_file.name[:-9] + ".tiff"
+            acquisition_img_file.name[:-9] + ".tiff" #rename the subsetted stack as either tiff or suffix.tiff as described below
         )
         if suffix is not None:
             analysis_img_file = analysis_img_file.with_name(
                 analysis_img_file.name[:-5] + suffix + ".tiff"
             )
-        analysis_channels_file = analysis_img_file.with_suffix(".csv")
+        analysis_channels_file = analysis_img_file.with_suffix(".csv") #rename channel csv file with suffix
         if hpf is not None:
-            analysis_img = filter_hot_pixels(analysis_img, hpf)
+            analysis_img = filter_hot_pixels(analysis_img, hpf) #stacked tiff loaded into function with defined hpf cutoff
         tifffile.imwrite(
             analysis_img_file, data=analysis_img.astype(np.uint16), imagej=True
         )
@@ -161,7 +161,7 @@ def export_to_histocat(
     mask_dir: Optional[Union[str, PathLike]] = None,
 ) -> None:
     Path(histocat_dir).mkdir(exist_ok=True)
-    for acquisition_img_file in Path(acquisition_dir).glob("[!.]*.ome.tiff"):
+    for acquisition_img_file in Path(acquisition_dir).glob("[!.]*.ome.tiff"): #does not read PosixPath of any hidden ometiff files
         acquisition_channels_file = acquisition_img_file.with_name(
             acquisition_img_file.name[:-9] + ".csv"
         )

@@ -1,4 +1,4 @@
-name: imcsegpipe
+name: imc
 channels:
   - conda-forge
   - defaults
